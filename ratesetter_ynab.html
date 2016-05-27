@@ -59,7 +59,7 @@ function transformTransaction(transaction, ynabConfig) {
       return [dateSwizzle(transaction["Date"]), ynabConfig["interestPayee"], ynabConfig["interestCategory"], "RateSetter Fee " + transaction["Item"], transaction["Fee"].replace("-",""), ""].join(",");
       break;
     case "repayment":
-      return [dateSwizzle(transaction["Date"]), ynabConfig["loadAccount"], ynabConfig["capitalCategory"], "Repayment " + transaction["Item"], "", transaction["Capital"]].join(",");
+      return [dateSwizzle(transaction["Date"]), ynabConfig["loanAccount"], ynabConfig["capitalCategory"], "Repayment " + transaction["Item"], "", transaction["Capital"]].join(",");
       break;
     case "withdrawal":
       return [dateSwizzle(transaction["Date"]), ynabConfig["withdrawAccount"], "", "Withdrawal", transaction["Amount"].replace("-",""), ""].join(",");
@@ -145,7 +145,7 @@ $( document ).ready(
       function() {
         var ynabConfig = {
           "interestPayee":     $("#interestPayee").val(),
-          "loadAccount":       "Transfer: " + $("#loanAccount").val(),
+          "loanAccount":       "Transfer: " + $("#loanAccount").val(),
           "withdrawAccount":   "Transfer: " + $("#withdrawAccount").val(),
           "capitalCategory":   $("#capitalCategory").val(),
           "interestCategory":  $("#interestCategory").val()
@@ -217,8 +217,8 @@ $( document ).ready(
         <input type="text" class="form-control" id="interestPayee" value="RateSetter" placeholder="Entity to attribute to interest payment income" />
       </div>
       <div class="form-group">
-        <label for="loadAccount">Loan account</label>
-        <input type="text" class="form-control" id="loadAccount" value="RateSetter Loans" placeholder="Account to transfer capital repayments from" />
+        <label for="loanAccount">Loan account</label>
+        <input type="text" class="form-control" id="loanAccount" value="RateSetter Loans" placeholder="Account to transfer capital repayments from" />
       </div>
       <div class="form-group">
         <label for="withdrawAccount">Withdraw account</label>
