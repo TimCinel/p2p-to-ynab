@@ -1,0 +1,280 @@
+<html>
+<head>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script> 
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap-theme.min.css" integrity="sha384-fLW2N01lMqjakBkx3l/M9EahuwpSfeNvV63J5ezn3uZzapT0u7EYsXMjQV+0En5r" crossorigin="anonymous">
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
+<script type="text/javascript">
+
+var ynabFields = "Date,Payee,Category,Memo,Outflow,Inflow".split(",")
+var ratesetterFields = "Date,Market,Type,Item,Amount,Capital,Interest,Fee".split(",")
+
+function csvLineToTransaction(line) {
+  values = line.split(",")
+  
+  transaction = {}
+  $.each(
+    values,
+    function(index, value) {
+      transaction[ratesetterFields[index]] = value;
+    }
+  )
+  
+  return Object.keys(transaction).length == ratesetterFields.length ? transaction : null;
+}
+
+function dateSwizzle(date) {
+  return date.split("-").reverse().join("/");
+}
+
+function transformTransaction(transaction, ynabConfig) {
+  var transactionTypes = {
+    "Account open":                       false,
+    "BPAY funds transfer in":             false,
+    "Cancellation of order":              false,
+    "Interest payment":                   "interest",
+    "Lend order":                         false,
+    "Lender interest margin fee":         "fee",
+    "Monthly repayment":                  "repayment",
+    "Next Day Money Withdrawal request":  "withdrawal"
+  }
+  
+  if (!transaction) {
+    return null;
+  }
+
+  var transactionType = transactionTypes[transaction["Type"]];
+
+  if (!transactionType) {
+    return null;
+  }
+
+  // 07/25/10,Sample Payee,,Sample Memo for an outflow,100.00,
+  switch(transactionType) {
+    case "interest":
+      return [dateSwizzle(transaction["Date"]), ynabConfig["interestPayee"], ynabConfig["interestCategory"], "Interest " + transaction["Item"], "", transaction["Interest"]].join(",");
+      break;
+    case "fee":
+      return [dateSwizzle(transaction["Date"]), ynabConfig["interestPayee"], ynabConfig["interestCategory"], "RateSetter Fee " + transaction["Item"], transaction["Fee"].replace("-",""), ""].join(",");
+      break;
+    case "repayment":
+      return [dateSwizzle(transaction["Date"]), ynabConfig["loadAccount"], ynabConfig["capitalCategory"], "Repayment " + transaction["Item"], "", transaction["Capital"]].join(",");
+      break;
+    case "withdrawal":
+      return [dateSwizzle(transaction["Date"]), ynabConfig["withdrawAccount"], "", "Withdrawal", transaction["Amount"].replace("-",""), ""].join(",");
+      break;
+    default:
+      return null;
+  }
+}
+
+function nextTab() {
+  $('.nav-tabs > .active').next('li').find('a').trigger('click');
+}
+
+function prevTab() {
+  $('.nav-tabs > .active').prev('li').find('a').trigger('click');
+}
+
+function fileSupport() {
+  if (!(window.File && window.FileReader && window.FileList && window.Blob)) {
+    $('.fileSupport').remove();
+  } else {
+    $(".advanced-field").hide();
+  }
+}
+
+function handleFileSelect(evt) {
+  var files = evt.target.files; // FileList object
+
+  $.each(
+    files,
+    function(index, file) {
+      var reader = new FileReader();
+      reader.onload = (function(aTextArea, alertsDiv){
+        return function (e) {
+          $(aTextArea).val(e.target.result)
+          $(aTextArea).trigger("change")
+
+          $(alertsDiv).append('<div id="loadAlert" class="alert alert-info" role="alert">Loaded ' + e.target.result.split("\n").length + ' lines</div>');
+          $("#loadAlert").delay(5000).fadeOut(300);
+        };
+      })("#csvInput", "#alerts");
+      reader.readAsText(file);
+    }
+  )
+}
+
+function handleFileSave() {
+  var fileName="Import to YNAB.csv"
+  var text = $("#csvOutput").val();
+
+    var downloadLink = document.createElement('a');
+    downloadLink.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+    downloadLink.setAttribute('download', fileName);
+
+    if (document.createEvent) {
+      var event = document.createEvent('MouseEvents');
+      event.initEvent('click', true, true);
+      downloadLink.dispatchEvent(event);
+    } else {
+      downloadLink.click();
+    }
+
+    console.log("deed it");
+}
+
+$( document ).ready(
+  function() {
+    fileSupport();
+
+    $("button.nextTab").click(nextTab);
+    $("button.prevTab").click(prevTab);
+    $("#rateSetterFile").on("change", handleFileSelect);
+    $("#toggleCsvInput").click(function() { $("#csvInput").slideToggle(); });
+    $("#toggleCsvOutput").click(function() { $("#csvOutput").slideToggle(); });
+    $("#toggleIgnoredOutput").click(function() { $("#ignoredOutput").slideToggle(); });
+
+    $("#csvInput").on("change keyup paste", function() { $("#convert").prop("disabled", $(this).val().length == 0);} );
+    $("#csvOutput").on("change keyup paste", function() { $("#save").prop("disabled", $(this).val().length == 0);})
+
+    $("#save").click(handleFileSave);
+
+    $("#convert").click(
+      function() {
+        var ynabConfig = {
+          "interestPayee":     $("#interestPayee").val(),
+          "loadAccount":       "Transfer: " + $("#loanAccount").val(),
+          "withdrawAccount":   "Transfer: " + $("#withdrawAccount").val(),
+          "capitalCategory":   $("#capitalCategory").val(),
+          "interestCategory":  $("#interestCategory").val()
+        }
+
+        var outCSV = ynabFields
+        var outIgnored = ""
+        $.each(
+          $("#csvInput").val().split("\n"),
+          function(index, line) {
+            out = transformTransaction(csvLineToTransaction(line), ynabConfig);
+            if (out) {
+              outCSV += "\n" + out;
+            } else {
+              // didn't process line
+              if (
+                line.length > 0 && 
+                line != ratesetterFields.join(",")
+              ) {
+                outIgnored += line + "\n";
+              }
+            }
+          }
+        )
+
+        $("#csvOutput").val(outCSV);
+        $("#csvOutput").trigger("change");
+        $("#ignoredOutput").val(outIgnored);
+
+        var numConverted = outCSV.split("\n").length - 1
+        var numIgnored = outIgnored.split("\n").length - 1
+
+        $("#alerts").append('<div id="convertAlert" class="alert alert-info" role="alert">Converted ' + numConverted + ' entries and ignored ' + numIgnored + ' entries.</div>');
+        $("#convertAlert").delay(5000).fadeOut(300);
+
+        $("#convertedEntries").text("(" + numConverted + ")");
+        $("#ignoredEntries").text("(" + numIgnored + ")");
+
+        nextTab();
+      }
+    )
+  }
+)
+</script>
+</head>
+<body>
+<div class="container" role="main">
+  <div class="jumbotron">
+    <h1>RateSetter Export to YNAB Import</h1>
+    <p>Keep track of your RateSetter transactions in YNAB with this CSV conversion tool.</p>
+  </div>
+
+  <div id="alerts"></div>
+
+  <div role="navigation">
+    <ul class="nav nav-tabs" role="tablist" id="steps">
+      <li role="presentation" class="active"><a href="#config" aria-controls="config" role="tab" data-toggle="tab">1. Configuration</a></li>
+      <li role="presentation"><a href="#input" aria-controls="input" role="tab" data-toggle="tab">2. Load RateSetter Export</a></li>
+      <li role="presentation"><a href="#output" aria-controls="output" role="tab" data-toggle="tab">3. Save YNAB File</a></li>
+    </ul>
+  </div>
+
+  <div class="tab-content">
+    <div role="tabpanel" class="tab-pane active" id="config">
+      <h3>Configuration</h3>
+      <h4>Payees</h4>
+      <div class="form-group">
+        <label for="interestPayee">Interest payee</label>
+        <input type="text" class="form-control" id="interestPayee" value="RateSetter" placeholder="Entity to attribute to interest payment income" />
+      </div>
+      <div class="form-group">
+        <label for="loadAccount">Loan account</label>
+        <input type="text" class="form-control" id="loadAccount" value="RateSetter Loans" placeholder="Account to transfer capital repayments from" />
+      </div>
+      <div class="form-group">
+        <label for="withdrawAccount">Withdraw account</label>
+        <input type="text" class="form-control" id="withdrawAccount" value="ING Savings" placeholder="Account to transfer withdrawals to" />
+      </div>
+      <h4>Categories</h4>
+      <div class="form-group">
+        <label for="capitalCategory">Capital repay category</label>
+        <input type="text" class="form-control" id="capitalCategory" value="Surpluses: Investments" placeholder="Category to assign repaid capital (empty if on-budget)" />
+      </div>
+      <div class="form-group">
+        <label for="interestCategory">Interest earning category</label>
+        <input type="text" class="form-control" id="interestCategory" value="Income: Available next month" placeholder="Category to assign earned interest" />
+      </div>
+      <div class="form-group">
+        <button class="btn btn-default nextTab">Next</button>
+      </div>
+    </div>
+    <div role="tabpanel" class="tab-pane" id="input">
+      <h3>Load RateSetter Export</h3>
+      <div class="form-group fileSupport">
+        <label for="rateSetterFile">RateSetter CSV file</label>
+        <input type="file" id="rateSetterFile" accept=".csv">
+        <p class="help-block">Obtain the RateSetter CSV file by going to <em><a href="https://members.ratesetter.com.au/your_lending/account_history.aspx">RateSetter &gt; Holding account history &gt; Show &gt; CSV &gt; Download</a></em></p>
+      </div>
+      <div class="form-group">
+        <a href="#" id="toggleCsvInput">(Show / Hide)</a>
+        <label for="csvInput">Advanced: Manually enter and edit CSV content</label>
+        <textarea id="csvInput" class="form-control advanced-field" rows="10" placeholder="Date,Payee,Category,Memo,Outflow,Inflow"></textarea>
+      </div>
+      <div class="form-group">
+        <button id="convert" class="btn btn-primary" disabled="disabled">Convert to YNAB CSV</button>
+      </div>
+      <div class="form-group">
+        <button class="btn btn-default prevTab">Previous</button>
+      </div>
+    </div>
+    <div role="tabpanel" class="tab-pane" id="output">
+      <h3>Save YNAB File</h3>
+      <h4>Converted Entries <span id="convertedEntries"></span></h4>
+      <div class="form-group fileSupport">
+        <button id="save" class="btn btn-primary" disabled="disabled">Save YNAB File</button>
+        <p class="help-block">Save this file, open YNAB, click <em>File &gt; Import Transactions from Your Bank</em>, then select the saved file.</p>
+      </div>
+      <div class="form-group">
+        <a href="#" id="toggleCsvOutput">(Show / Hide)</a>
+        <label for="csvOutput">Advanced: Save this text to file then import into YNAB</label>
+        <textarea id="csvOutput" class="form-control advanced-field" rows="10"></textarea>
+      </div>
+      <h4>Ignored Entries <span id="ignoredEntries"></span></h4>
+      <div class="form-group">
+        <a href="#" id="toggleIgnoredOutput">(Show / Hide)</a>
+        <label for="ignoredOutput">Advanced: The following transactions were not converted and will have to be manually recorded</label>
+        <textarea id="ignoredOutput" class="form-control advanced-field" rows="5"></textarea>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
