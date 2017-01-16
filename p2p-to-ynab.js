@@ -10,7 +10,7 @@ function pageReady() {
   $("#toggleIgnoredOutput").click(function() { $("#ignoredOutput").slideToggle(); });
   $("#csvInput").on("change keyup paste", function() { $("#convert").prop("disabled", $(this).val().length == 0);} );
   $("#csvOutput").on("change keyup paste", function() { $("#save").prop("disabled", $(this).val().length == 0);})
-    $("#save").click(handleFileSave);
+  $("#save").click(handleFileSave);
 }
 
 function nextTab() {
