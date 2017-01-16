@@ -1,21 +1,21 @@
 <html>
 <head>
-<title>RateSetter Export to YNAB Import</title>
+<title>${PLATFORM} Export to YNAB Import</title>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script> 
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap-theme.min.css" integrity="sha384-fLW2N01lMqjakBkx3l/M9EahuwpSfeNvV63J5ezn3uZzapT0u7EYsXMjQV+0En5r" crossorigin="anonymous">
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
 
 <script type="text/javascript" src="p2p-to-ynab.js"></script>
-<script type="text/javascript" src="ratesetter.js"></script>
+<script type="text/javascript" src="${PLATFORM_LOWER}.js"></script>
 
 </head>
 
 <body>
 <div class="container" role="main">
   <div class="jumbotron">
-    <h1>RateSetter Export to YNAB Import</h1>
-    <p>Keep track of your RateSetter transactions in YNAB with this CSV conversion tool.</p>
+    <h1>${PLATFORM} Export to YNAB Import</h1>
+    <p>Keep track of your ${PLATFORM} transactions in YNAB with this CSV conversion tool.</p>
   </div>
 
   <div id="alerts"></div>
@@ -23,7 +23,7 @@
   <div role="navigation">
     <ul class="nav nav-tabs" role="tablist" id="steps">
       <li role="presentation" class="active"><a href="#config" aria-controls="config" role="tab" data-toggle="tab">1. Configuration</a></li>
-      <li role="presentation"><a href="#input" aria-controls="input" role="tab" data-toggle="tab">2. Load RateSetter Export</a></li>
+      <li role="presentation"><a href="#input" aria-controls="input" role="tab" data-toggle="tab">2. Load ${PLATFORM} Export</a></li>
       <li role="presentation"><a href="#output" aria-controls="output" role="tab" data-toggle="tab">3. Save YNAB File</a></li>
     </ul>
   </div>
@@ -34,35 +34,35 @@
       <h4>Payees</h4>
       <div class="form-group">
         <label for="interestPayee">Interest payee</label>
-        <input type="text" class="form-control" id="interestPayee" value="RateSetter" placeholder="Entity to attribute to interest payment income" />
+        <input type="text" class="form-control" id="interestPayee" value="${INTEREST_PAYEE}" placeholder="Entity to attribute to interest payment income" />
       </div>
       <div class="form-group">
         <label for="loanAccount">Loan account</label>
-        <input type="text" class="form-control" id="loanAccount" value="RateSetter Loans" placeholder="Account to transfer capital repayments from" />
+        <input type="text" class="form-control" id="loanAccount" value="${LOAN_ACCOUNT}" placeholder="Account to transfer capital repayments from" />
       </div>
       <div class="form-group">
         <label for="withdrawAccount">Withdraw account</label>
-        <input type="text" class="form-control" id="withdrawAccount" value="UBank Savings" placeholder="Account to transfer withdrawals to" />
+        <input type="text" class="form-control" id="withdrawAccount" value="${WITHDRAWAL_ACCOUNT}" placeholder="Account to transfer withdrawals to" />
       </div>
       <h4>Categories</h4>
       <div class="form-group">
         <label for="capitalCategory">Capital repay category</label>
-        <input type="text" class="form-control" id="capitalCategory" value="Surpluses: Investments" placeholder="Category to assign repaid capital (empty if on-budget)" />
+        <input type="text" class="form-control" id="capitalCategory" value="${CAPITAL_CATEGORY}" placeholder="Category to assign repaid capital (empty if on-budget)" />
       </div>
       <div class="form-group">
         <label for="interestCategory">Interest earning category</label>
-        <input type="text" class="form-control" id="interestCategory" value="Income: Available next month" placeholder="Category to assign earned interest" />
+        <input type="text" class="form-control" id="interestCategory" value="${INTEREST_CATEGORY}" placeholder="Category to assign earned interest" />
       </div>
       <div class="form-group">
         <button class="btn btn-default nextTab">Next</button>
       </div>
     </div>
     <div role="tabpanel" class="tab-pane" id="input">
-      <h3>Load RateSetter Export</h3>
+      <h3>Load ${PLATFORM} Export</h3>
       <div class="form-group fileSupport">
-        <label for="rateSetterFile">RateSetter CSV file</label>
-        <input type="file" id="rateSetterFile" accept=".csv">
-        <p class="help-block">Obtain the RateSetter CSV file by going to <em><a href="https://members.ratesetter.com.au/your_lending/account_history.aspx">RateSetter &gt; Holding account history &gt; Show &gt; CSV &gt; Download</a></em></p>
+        <label for="inputFile">${PLATFORM} CSV file</label>
+        <input type="file" id="inputFile" accept=".csv">
+        <p class="help-block">${PLATFORM_HELP_BLOCK}</p>
       </div>
       <div class="form-group">
         <a href="#" id="toggleCsvInput">(Show / Hide)</a>
