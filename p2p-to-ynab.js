@@ -70,15 +70,17 @@ function handleFileSave() {
 }
 
 function csvLineToTransaction(line, p2pFields) {
-  values = line.split(",")
-  
   transaction = {}
+
   $.each(
-    values,
-    function(index, value) {
-      transaction[p2pFields[index]] = value;
-    }
-  )
+    Papa.parse(line).data,
+    function(index, dataValue) {
+      $.each(
+        dataValue,
+        function(index, lineValue) {
+          transaction[p2pFields[index]] = lineValue;
+      });
+  });
   
   return Object.keys(transaction).length == p2pFields.length ? transaction : null;
 }
