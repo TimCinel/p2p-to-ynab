@@ -1,3 +1,3 @@
 #!/bin/sh
 
-cp ratesetter_ynab.html ~/timcinel.com\ public
+cp *_ynab.html *.js ~/timcinel.com\ public
