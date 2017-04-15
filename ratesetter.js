@@ -13,6 +13,7 @@ function transformTransaction(transaction, ynabConfig) {
     "Lend order":                         false,
     "Lender interest margin fee":         "fee",
     "Monthly repayment":                  "repayment",
+    "Principal repayment":                "repayment",
     "Next Day Money Withdrawal request":  "withdrawal"
   }
   
