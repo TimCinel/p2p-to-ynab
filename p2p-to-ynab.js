@@ -66,7 +66,6 @@ function handleFileSave() {
       downloadLink.click();
     }
 
-    console.log("deed it");
 }
 
 function csvLineToTransaction(line, p2pFields) {
@@ -119,7 +118,9 @@ function convert(p2pFields) {
   $("#csvOutput").trigger("change");
   $("#ignoredOutput").val(outIgnored);
 
-  var numConverted = outCSV.split("\n").length - 1
+  outCSV = outCSV + "\n"
+
+  var numConverted = outCSV.split("\n").length - 2
   var numIgnored = outIgnored.split("\n").length - 1
 
   $("#alerts").append('<div id="convertAlert" class="alert alert-info" role="alert">Converted ' + numConverted + ' entries and ignored ' + numIgnored + ' entries.</div>');
